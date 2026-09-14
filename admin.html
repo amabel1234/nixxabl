@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NIXX VIP — Admin Key Manager</title>
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="./admin.js"></script>
+  <style>
+    .key-manager{margin-top:24px}
+    .manager-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;margin-bottom:18px}
+    .manager-head h2{margin:5px 0}
+    .manager-tools{display:flex;gap:8px;flex-wrap:wrap}
+    .key-list{display:grid;gap:12px}
+    .key-item{border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:18px;background:rgba(255,255,255,.035)}
+    .key-top{display:flex;justify-content:space-between;gap:12px;align-items:center}
+    .key-code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:14px;word-break:break-all}
+    .key-status{font-size:11px;font-weight:800;letter-spacing:.08em;padding:6px 9px;border-radius:999px;white-space:nowrap}
+    .status-issued{background:rgba(255,193,7,.12);color:#ffd666}
+    .status-active{background:rgba(114,245,168,.12);color:#72f5a8}
+    .status-expired,.status-revoked{background:rgba(255,100,120,.12);color:#ff8798}
+    .key-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:15px}
+    .key-grid small{display:block;color:var(--muted);font-size:10px;margin-bottom:4px}
+    .key-grid b{font-size:12px}
+    .key-actions{margin-top:15px;display:flex;justify-content:flex-end;gap:8px}
+    .button-secondary{border-color:rgba(180,120,255,.3)!important;color:#d9b9ff!important}
+    .button-danger{border-color:rgba(255,90,110,.35)!important;color:#ff8798!important}
+    .empty-key{padding:30px;text-align:center;color:var(--muted);border:1px dashed rgba(255,255,255,.12);border-radius:16px}
+    @media(max-width:760px){.key-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.manager-head{align-items:stretch;flex-direction:column}.key-top{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="orb orb-one" aria-hidden="true"></div>
+
+  <main class="admin-shell">
+    <a class="brand" href="./index.html">
+      <span class="brand-symbol">ϟ</span>
+      <span><b>NIXX</b><small>ADMIN KEY MANAGER</small></span>
+    </a>
+
+    <section class="admin-card">
+      <span class="section-number">PRIVATE ADMIN AREA</span>
+      <h1>Generate license key</h1>
+      <p class="admin-muted">
+        Buat key setelah pembayaran pembeli terverifikasi.
+        Masa aktif mulai dihitung saat key pertama kali digunakan.
+      </p>
+
+      <form id="issueForm">
+        <label for="adminToken">Admin token</label>
+        <input id="adminToken" type="password" placeholder="Admin token / Reseller token" autocomplete="off" required>
+        <p id="roleBadge" class="admin-muted" style="margin-top:8px">Role: belum terdeteksi</p>
+
+        <label for="customer">Nama / username pembeli</label>
+        <input id="customer" placeholder="Contoh: username-pembeli" required>
+
+        <label for="days">Masa aktif</label>
+        <select id="days">
+          <option value="1">1 Hari</option>
+          <option value="3">3 Hari</option>
+          <option value="7" selected>7 Hari</option>
+          <option value="30">30 Hari</option>
+        </select>
+
+        <button class="button button-primary button-full" type="submit">Generate Key ↗</button>
+      </form>
+
+      <div class="admin-result" id="result" hidden>
+        <span class="section-number">KEY GENERATED</span>
+        <strong id="generatedKey"></strong>
+        <div class="result-actions">
+          <button class="button button-primary" id="copyKey" type="button">Copy key</button>
+          <a class="button" id="sendWhatsapp" target="_blank" rel="noreferrer">Kirim WhatsApp ↗</a>
+        </div>
+      </div>
+
+      <p class="admin-warning">Admin dapat generate, lihat, delete, dan mengatur announcement. Reseller hanya dapat generate dan melihat key reseller. Jangan bagikan token.</p>
+    </section>
+
+    <section class="admin-card key-manager">
+      <div class="manager-head">
+        <div>
+          <span class="section-number">LICENSE DATABASE</span>
+          <h2>Daftar semua key</h2>
+          <p class="admin-muted">
+            Lihat semua license yang sudah dibuat dan hapus key yang tidak diperlukan.
+          </p>
+        </div>
+        <div class="manager-tools">
+          <button class="button" id="refreshKeys" type="button">↻ Refresh</button>
+        </div>
+      </div>
+
+      <div class="key-list" id="licenseList">
+        <div class="empty-key">Masukkan admin token lalu tekan Refresh.</div>
+      </div>
+    </section>
+
+    <section class="admin-card key-manager">
+      <div class="manager-head">
+        <div><span class="section-number">SITE CONTROL</span><h2>Announcement</h2><p class="admin-muted">Tampilkan banner pengumuman di halaman utama NixxVIP.</p></div>
+      </div>
+      <form id="announcementForm">
+        <label for="announcementText">Pesan</label>
+        <input id="announcementText" maxlength="300" placeholder="Contoh: Maintenance malam ini pukul 23.00 WIB">
+        <label for="announcementType">Tipe</label>
+        <select id="announcementType"><option value="info">Info</option><option value="success">Success</option><option value="warning">Warning</option><option value="danger">Danger</option></select>
+        <label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input id="announcementEnabled" type="checkbox" style="width:auto"> Aktifkan banner</label>
+        <button class="button button-primary button-full" type="submit">Simpan Announcement</button>
+        <p id="announcementStatus" class="admin-muted"></p>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
